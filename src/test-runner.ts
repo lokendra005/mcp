@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import axios, { AxiosError } from 'axios';  // First install: npm install axios
 import readline from 'readline';
 
 const rl = readline.createInterface({
@@ -7,37 +7,23 @@ const rl = readline.createInterface({
 });
 
 class MCPTestRunner {
-  private server: any;
+  private baseUrl = 'http://localhost:3000';
   private requestId: number = 1;
 
   async start() {
     console.log('🚀 Starting MCP Multi-API Server Test Runner\n');
     
-    // Start the server
-    this.server = spawn('node', ['dist/index.js'], {
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    this.server.stdout.on('data', (data: Buffer) => {
-      const response = data.toString().trim();
-      if (response) {
-        try {
-          const parsed = JSON.parse(response);
-          console.log('\n📥 Response:', JSON.stringify(parsed, null, 2));
-        } catch {
-          console.log('\n📥 Server:', response);
-        }
+    // Test server health
+    try {
+      const health = await axios.get(`${this.baseUrl}/health`);
+      console.log('Server health:', health.data);
+      this.showMenu();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Failed to connect to server:', error.message);
       }
-    });
-
-    this.server.stderr.on('data', (data: Buffer) => {
-      console.error('\n❌ Error:', data.toString());
-    });
-
-    // Wait for server to start
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    this.showMenu();
+      this.exit();
+    }
   }
 
   showMenu() {
@@ -85,30 +71,44 @@ class MCPTestRunner {
     setTimeout(() => this.showMenu(), 2000);
   }
 
-  listTools() {
-    const request = {
-      jsonrpc: '2.0',
-      method: 'tools/list',
-      id: this.requestId++
-    };
+  async listTools() {
+    try {
+      const request = {
+        jsonrpc: '2.0',
+        method: 'tools/list',
+        id: this.requestId++
+      };
 
-    console.log('\n📤 Request:', JSON.stringify(request, null, 2));
-    this.server.stdin.write(JSON.stringify(request) + '\n');
+      console.log('\n📤 Request:', JSON.stringify(request, null, 2));
+      const response = await axios.post(`${this.baseUrl}/mcp`, request);
+      console.log('\n📥 Response:', JSON.stringify(response.data, null, 2));
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        console.error('Error:', error.response?.data || error.message);
+      }
+    }
   }
 
-  callTool(name: string, args: any) {
-    const request = {
-      jsonrpc: '2.0',
-      method: 'tools/call',
-      params: {
-        name,
-        arguments: args
-      },
-      id: this.requestId++
-    };
+  async callTool(name: string, args: any) {
+    try {
+      const request = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: {
+          name,
+          arguments: args
+        },
+        id: this.requestId++
+      };
 
-    console.log('\n📤 Request:', JSON.stringify(request, null, 2));
-    this.server.stdin.write(JSON.stringify(request) + '\n');
+      console.log('\n📤 Request:', JSON.stringify(request, null, 2));
+      const response = await axios.post(`${this.baseUrl}/mcp`, request);
+      console.log('\n📥 Response:', JSON.stringify(response.data, null, 2));
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        console.error('Error:', error.response?.data || error.message);
+      }
+    }
   }
 
   customToolCall() {
@@ -127,7 +127,6 @@ class MCPTestRunner {
 
   exit() {
     console.log('\n👋 Shutting down...');
-    this.server.kill();
     rl.close();
     process.exit(0);
   }

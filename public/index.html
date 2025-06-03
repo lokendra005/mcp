@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCP Multi-API Server Tester</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        button { margin: 5px; padding: 10px; cursor: pointer; }
+        #response { 
+            background: #f5f5f5; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        input, select { margin: 5px; padding: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MCP Multi-API Server Global Tester</h1>
+        
+        <div>
+            <h2>Quick Tests</h2>
+            <button onclick="listTools()">List All Tools</button>
+            <button onclick="testWeather()">Test Weather (London)</button>
+            <button onclick="testStock()">Test Stock (AAPL)</button>
+            <button onclick="testNews()">Test News (Tech)</button>
+        </div>
+
+        <div>
+            <h2>Custom Tool Call</h2>
+            <select id="toolName">
+                <option value="get_current_weather">Current Weather</option>
+                <option value="get_weather_forecast">Weather Forecast</option>
+                <option value="get_stock_quote">Stock Quote</option>
+                <option value="get_currency_exchange">Currency Exchange</option>
+                <option value="get_crypto_price">Crypto Price</option>
+                <option value="get_top_headlines">Top Headlines</option>
+                <option value="search_news">Search News</option>
+                <option value="get_news_sources">News Sources</option>
+            </select>
+            <br>
+            <textarea id="args" placeholder='{"city": "Paris"}' rows="3" cols="50"></textarea>
+            <br>
+            <button onclick="callCustomTool()">Call Tool</button>
+        </div>
+
+        <div id="response"></div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin + '/mcp';
+        
+        async function makeRequest(method, params = {}) {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method,
+                    params,
+                    id: Date.now()
+                })
+            });
+            
+            const data = await response.json();
+            document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            return data;
+        }
+        
+        function listTools() {
+            makeRequest('tools/list');
+        }
+        
+        function testWeather() {
+            makeRequest('tools/call', {
+                name: 'get_current_weather',
+                arguments: { city: 'London' }
+            });
+        }
+        
+        function testStock() {
+            makeRequest('tools/call', {
+                name: 'get_stock_quote',
+                arguments: { symbol: 'AAPL' }
+            });
+        }
+        
+        function testNews() {
+            makeRequest('tools/call', {
+                name: 'get_top_headlines',
+                arguments: { country: 'us', category: 'technology' }
+            });
+        }
+        
+        function callCustomTool() {
+            const toolName = document.getElementById('toolName').value;
+            const args = JSON.parse(document.getElementById('args').value || '{}');
+            
+            makeRequest('tools/call', {
+                name: toolName,
+                arguments: args
+            });
+        }
+    </script>
+</body>
+</html>
