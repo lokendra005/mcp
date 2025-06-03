@@ -125,4 +125,78 @@ node dist/index.js
 node dist/test-runner.js
 
 
+## Testing Individual APIs
+
+### Test Weather API
+
+```bash
+# Create a test file: test-weather.ts
+import { getCurrentWeather, getWeatherForecast } from './src/api/weather.js';
+
+async function testWeather() {
+  try {
+    console.log('Testing current weather...');
+    const current = await getCurrentWeather('London');
+    console.log('Current weather:', current);
+    
+    console.log('\nTesting forecast...');
+    const forecast = await getWeatherForecast('Paris', 3);
+    console.log('Forecast:', forecast);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+testWeather();
+```
+
+Run:
+```bash
+npx tsx test-weather.ts
+```
+
+### Test Finance API
+
+```bash
+import { getStockQuote, getCurrencyExchange } from './src/api/finance.js';
+
+async function testFinance() {
+  try {
+    console.log('Testing stock quote...');
+    const stock = await getStockQuote('AAPL');
+    console.log('Stock:', stock);
+    
+    console.log('\nTesting currency exchange...');
+    const exchange = await getCurrencyExchange('USD', 'EUR');
+    console.log('Exchange:', exchange);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+testFinance();
+```
+
+### Test News API
+
+```bash
+# Create a test file: test-news.ts
+import { getTopHeadlines, searchNews } from './src/api/news.js';
+
+async function testNews() {
+  try {
+    console.log('Testing headlines...');
+    const headlines = await getTopHeadlines('us', 'technology');
+    console.log('Headlines:', headlines);
+    
+    console.log('\nTesting search...');
+    const search = await searchNews('artificial intelligence');
+    console.log('Search results:', search);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+testNews();
+
 
